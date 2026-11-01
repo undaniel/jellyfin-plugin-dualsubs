@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here.
 
+## 1.0.4.0 - 2026-11-01
+
+- Add a plugin icon (`images/icon.png`), published through `imageUrl` in the manifest, so
+  the catalogue and the installed plugin list stop showing the generic placeholder.
+
 ## 1.0.3.0 - 2026-11-01
 
 - Fix: an item already affected by the stale subtitle cache from 1.0.0/1.0.1 now heals.
