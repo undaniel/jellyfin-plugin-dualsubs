@@ -65,9 +65,9 @@ https://github.com/undaniel/jellyfin-plugin-dualsubs/releases/latest/download/ma
 Then open the **Catalog** tab and install **Dual Subs**.
 
 That URL always points at the manifest of the newest release, so Jellyfin shows updates
-automatically. `manifest.json` in this repository is the source for it; the release
-workflow (`.github/workflows/publish.yaml`) rebuilds the zip and manifest with `jprm` and
-attaches both to the GitHub release tagged `v<version>`.
+automatically. `manifest.json` in this repository mirrors the current release; the release
+workflow (`.github/workflows/publish.yaml`) rebuilds the zip and the manifest with `jprm`
+and attaches both to the GitHub release tagged `v<version>`.
 
 ### Manual build
 
