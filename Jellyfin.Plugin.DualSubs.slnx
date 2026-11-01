@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Jellyfin.Plugin.DualSubs/Jellyfin.Plugin.DualSubs.csproj" />
+  <Project Path="Jellyfin.Plugin.DualSubs.Tests/Jellyfin.Plugin.DualSubs.Tests.csproj" />
+</Solution>

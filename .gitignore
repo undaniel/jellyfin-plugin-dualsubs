@@ -1,0 +1,10 @@
+bin/
+obj/
+TestResults/
+artifacts/
+repo/
+.venv/
+*.user
+*.suo
+.vs/
+.idea/

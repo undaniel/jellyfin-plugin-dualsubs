@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Dual Subs</title>
+</head>
+<body>
+<div id="DualSubsConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
+     data-require="emby-input,emby-button,emby-select,emby-checkbox">
+    <div data-role="content">
+        <div class="content-primary">
+            <form id="DualSubsConfigForm">
+                <h2>Dual Subs</h2>
+                <p class="fieldDescription">
+                    Combines two existing text subtitle tracks into a new ASS track. The learned language is
+                    shown at the bottom and the native language above it. Bitmap subtitles (PGS, VobSub, DVB)
+                    are skipped.
+                </p>
+
+                <h3>Language pairs</h3>
+                <p class="fieldDescription">
+                    Use ISO 639-1 or 639-2 codes, for example <code>eng</code> and <code>spa</code>.
+                    Both languages must be different.
+                </p>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                    <tr>
+                        <th style="text-align:left; padding:.4em;">Learned (bottom)</th>
+                        <th style="text-align:left; padding:.4em;">Native (top)</th>
+                        <th style="text-align:left; padding:.4em;">Enabled</th>
+                        <th style="padding:.4em;"></th>
+                    </tr>
+                    </thead>
+                    <tbody id="Pairs"></tbody>
+                </table>
+                <button is="emby-button" type="button" id="AddPair" class="raised">
+                    <span>Add pair</span>
+                </button>
+
+                <h3>Layout</h3>
+                <div class="selectContainer">
+                    <label class="selectLabel" for="Layout">Layout</label>
+                    <select id="Layout" name="Layout" is="emby-select" class="emby-select-withcolor emby-select">
+                        <option value="TopBottom">Native above, learned below</option>
+                        <option value="StackedBottom">Both at the bottom, native stacked above</option>
+                    </select>
+                </div>
+
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="PrimaryFontSize">Learned font size</label>
+                    <input id="PrimaryFontSize" type="number" min="10" max="200" step="1" is="emby-input" />
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="SecondaryFontSize">Native font size</label>
+                    <input id="SecondaryFontSize" type="number" min="10" max="200" step="1" is="emby-input" />
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="OutlineSize">Outline size</label>
+                    <input id="OutlineSize" type="number" min="0" max="20" step="1" is="emby-input" />
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="PrimaryColor">Learned color</label>
+                    <input id="PrimaryColor" type="color" is="emby-input" />
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="SecondaryColor">Native color</label>
+                    <input id="SecondaryColor" type="color" is="emby-input" />
+                </div>
+
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input id="SecondaryItalic" type="checkbox" is="emby-checkbox" />
+                        <span>Italic native text</span>
+                    </label>
+                </div>
+
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input id="AutoAlignOffset" type="checkbox" is="emby-checkbox" />
+                        <span>Auto-align offsets</span>
+                    </label>
+                    <div class="fieldDescription">
+                        Estimates a constant shift between the two tracks, up to the limit below.
+                    </div>
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="MaxOffsetSeconds">Maximum offset (seconds)</label>
+                    <input id="MaxOffsetSeconds" type="number" min="0" max="120" step="1" is="emby-input" />
+                </div>
+
+                <h3>Behavior</h3>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input id="ProcessOnItemAdded" type="checkbox" is="emby-checkbox" />
+                        <span>Process new and updated items automatically</span>
+                    </label>
+                    <div class="fieldDescription">Events are debounced before processing.</div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input id="OverwritePluginFiles" type="checkbox" is="emby-checkbox" />
+                        <span>Replace old plugin files when the sources or styles change</span>
+                    </label>
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="DebounceSeconds">Event debounce (seconds)</label>
+                    <input id="DebounceSeconds" type="number" min="5" max="3600" step="1" is="emby-input" />
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="MaxConcurrency">Automatic parallel items</label>
+                    <input id="MaxConcurrency" type="number" min="1" max="4" step="1" is="emby-input" />
+                </div>
+
+                <h3>Libraries</h3>
+                <p class="fieldDescription">No selection means every video library.</p>
+                <div id="Libraries">Loading...</div>
+
+                <h3>Preview</h3>
+                <div style="background:#111; padding:1.2em; border-radius:6px; text-align:center; line-height:1.5;">
+                    <div id="PreviewSecondary" style="font-weight:400;">La línea nativa va arriba.</div>
+                    <div id="PreviewPrimary" style="font-weight:700;">The learned line goes below.</div>
+                </div>
+
+                <div style="margin-top:1.5em;">
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                        <span>Save</span>
+                    </button>
+                    <button is="emby-button" type="button" id="RunNow" class="raised">
+                        <span>Run now</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        (function () {
+            'use strict';
+
+            var pluginId = 'b7f0a4c2-6d3e-4a91-9c58-2e7d1f0a3b64';
+            var config = null;
+            var librariesLoaded = false;
+
+            function byId(id) {
+                return document.querySelector('#' + id);
+            }
+
+            function addPairRow(pair) {
+                var row = document.createElement('tr');
+                row.innerHTML =
+                    '<td style="padding:.25em;"><input class="pair-primary" type="text" is="emby-input" maxlength="8" /></td>' +
+                    '<td style="padding:.25em;"><input class="pair-secondary" type="text" is="emby-input" maxlength="8" /></td>' +
+                    '<td style="padding:.25em; text-align:center;"><input class="pair-enabled" type="checkbox" is="emby-checkbox" /></td>' +
+                    '<td style="padding:.25em;"><button is="emby-button" type="button" class="raised pair-remove"><span>Remove</span></button></td>';
+
+                row.querySelector('.pair-primary').value = pair.PrimaryLanguage || 'eng';
+                row.querySelector('.pair-secondary').value = pair.SecondaryLanguage || 'spa';
+                row.querySelector('.pair-enabled').checked = pair.Enabled !== false;
+                row.querySelector('.pair-remove').addEventListener('click', function () {
+                    row.remove();
+                });
+
+                byId('Pairs').appendChild(row);
+            }
+
+            function renderPairs() {
+                byId('Pairs').textContent = '';
+                (config.Pairs || []).forEach(addPairRow);
+                if (!byId('Pairs').children.length) {
+                    addPairRow({ PrimaryLanguage: 'eng', SecondaryLanguage: 'spa', Enabled: true });
+                }
+            }
+
+            function renderLibraries(folders) {
+                librariesLoaded = true;
+                var container = byId('Libraries');
+                container.textContent = '';
+                var selected = config.LibraryIds || [];
+
+                (folders || []).filter(function (folder) {
+                    var type = folder.CollectionType;
+                    return !type || ['movies', 'tvshows', 'homevideos', 'musicvideos'].indexOf(type) !== -1;
+                }).forEach(function (folder) {
+                    var label = document.createElement('label');
+                    label.className = 'emby-checkbox-label';
+                    label.style.display = 'block';
+
+                    var input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.setAttribute('is', 'emby-checkbox');
+                    input.className = 'library-checkbox';
+                    input.value = folder.ItemId;
+                    input.checked = selected.indexOf(folder.ItemId) !== -1;
+
+                    var span = document.createElement('span');
+                    span.textContent = folder.Name;
+
+                    label.appendChild(input);
+                    label.appendChild(span);
+                    container.appendChild(label);
+                });
+
+                if (!container.children.length) {
+                    container.textContent = 'No video libraries found.';
+                }
+            }
+
+            function loadLibraries() {
+                return ApiClient.getJSON(ApiClient.getUrl('Library/VirtualFolders')).then(renderLibraries).catch(function () {
+                    librariesLoaded = false;
+                    byId('Libraries').textContent = 'Could not load libraries.';
+                });
+            }
+
+            function loadConfig() {
+                return ApiClient.getPluginConfiguration(pluginId).then(function (loaded) {
+                    config = loaded;
+                    byId('Layout').value = config.Layout || 'TopBottom';
+                    byId('PrimaryFontSize').value = config.PrimaryFontSize || 62;
+                    byId('SecondaryFontSize').value = config.SecondaryFontSize || 50;
+                    byId('OutlineSize').value = config.OutlineSize === undefined ? 3 : config.OutlineSize;
+                    byId('PrimaryColor').value = config.PrimaryColor || '#FFFFFF';
+                    byId('SecondaryColor').value = config.SecondaryColor || '#FFE680';
+                    byId('SecondaryItalic').checked = !!config.SecondaryItalic;
+                    byId('AutoAlignOffset').checked = config.AutoAlignOffset !== false;
+                    byId('MaxOffsetSeconds').value = config.MaxOffsetSeconds === undefined ? 10 : config.MaxOffsetSeconds;
+                    byId('ProcessOnItemAdded').checked = config.ProcessOnItemAdded !== false;
+                    byId('OverwritePluginFiles').checked = config.OverwritePluginFiles !== false;
+                    byId('DebounceSeconds').value = config.DebounceSeconds || 60;
+                    byId('MaxConcurrency').value = config.MaxConcurrency || 1;
+                    renderPairs();
+                    updatePreview();
+                });
+            }
+
+            function collectPairs() {
+                return Array.prototype.map.call(byId('Pairs').children, function (row) {
+                    return {
+                        PrimaryLanguage: row.querySelector('.pair-primary').value.trim().toLowerCase(),
+                        SecondaryLanguage: row.querySelector('.pair-secondary').value.trim().toLowerCase(),
+                        Enabled: row.querySelector('.pair-enabled').checked
+                    };
+                });
+            }
+
+            function validate(pairs) {
+                var enabled = pairs.filter(function (pair) { return pair.Enabled; });
+                if (!enabled.length) {
+                    return 'Enable at least one language pair.';
+                }
+
+                for (var i = 0; i < enabled.length; i++) {
+                    var pair = enabled[i];
+                    if (!pair.PrimaryLanguage || !pair.SecondaryLanguage) {
+                        return 'Every enabled pair needs two language codes.';
+                    }
+                    if (pair.PrimaryLanguage === pair.SecondaryLanguage) {
+                        return 'Primary and secondary languages must be different.';
+                    }
+                }
+
+                return null;
+            }
+
+            function collectConfig() {
+                config.Pairs = collectPairs();
+                config.Layout = byId('Layout').value;
+                config.PrimaryFontSize = parseInt(byId('PrimaryFontSize').value, 10) || 62;
+                config.SecondaryFontSize = parseInt(byId('SecondaryFontSize').value, 10) || 50;
+                config.OutlineSize = parseInt(byId('OutlineSize').value, 10) || 0;
+                config.PrimaryColor = byId('PrimaryColor').value;
+                config.SecondaryColor = byId('SecondaryColor').value;
+                config.SecondaryItalic = byId('SecondaryItalic').checked;
+                config.AutoAlignOffset = byId('AutoAlignOffset').checked;
+                config.MaxOffsetSeconds = parseInt(byId('MaxOffsetSeconds').value, 10) || 0;
+                config.ProcessOnItemAdded = byId('ProcessOnItemAdded').checked;
+                config.OverwritePluginFiles = byId('OverwritePluginFiles').checked;
+                config.DebounceSeconds = parseInt(byId('DebounceSeconds').value, 10) || 60;
+                config.MaxConcurrency = parseInt(byId('MaxConcurrency').value, 10) || 1;
+
+                if (librariesLoaded) {
+                    config.LibraryIds = Array.prototype.map.call(
+                        document.querySelectorAll('.library-checkbox:checked'),
+                        function (input) { return input.value; });
+                }
+
+                return config;
+            }
+
+            function updatePreview() {
+                var primary = byId('PreviewPrimary');
+                var secondary = byId('PreviewSecondary');
+                primary.style.color = byId('PrimaryColor').value;
+                primary.style.fontSize = Math.max(12, parseInt(byId('PrimaryFontSize').value, 10) / 2) + 'px';
+                secondary.style.color = byId('SecondaryColor').value;
+                secondary.style.fontSize = Math.max(10, parseInt(byId('SecondaryFontSize').value, 10) / 2) + 'px';
+                secondary.style.fontStyle = byId('SecondaryItalic').checked ? 'italic' : 'normal';
+            }
+
+            function saveConfig(event) {
+                event.preventDefault();
+                var candidate = collectConfig();
+                var error = validate(candidate.Pairs);
+                if (error) {
+                    Dashboard.alert(error);
+                    return;
+                }
+
+                Dashboard.showLoadingMsg();
+                ApiClient.updatePluginConfiguration(pluginId, candidate).then(function (result) {
+                    Dashboard.processPluginConfigurationUpdateResult(result);
+                }).catch(function () {
+                    Dashboard.hideLoadingMsg();
+                    Dashboard.alert('Could not save the configuration.');
+                });
+            }
+
+            byId('AddPair').addEventListener('click', function () {
+                addPairRow({ PrimaryLanguage: 'eng', SecondaryLanguage: 'spa', Enabled: true });
+            });
+
+            ['PrimaryColor', 'SecondaryColor', 'PrimaryFontSize', 'SecondaryFontSize', 'SecondaryItalic'].forEach(function (id) {
+                byId(id).addEventListener('input', updatePreview);
+                byId(id).addEventListener('change', updatePreview);
+            });
+
+            byId('RunNow').addEventListener('click', function () {
+                Dashboard.showLoadingMsg();
+                ApiClient.getJSON(ApiClient.getUrl('ScheduledTasks')).then(function (tasks) {
+                    var task = (tasks || []).filter(function (item) {
+                        return item.Key === 'DualSubsGenerate';
+                    })[0];
+
+                    if (!task) {
+                        Dashboard.hideLoadingMsg();
+                        Dashboard.alert('The scheduled task was not found. Is the plugin loaded?');
+                        return;
+                    }
+
+                    return ApiClient.ajax({
+                        type: 'POST',
+                        url: ApiClient.getUrl('ScheduledTasks/Running/' + task.Id)
+                    }).then(function () {
+                        Dashboard.hideLoadingMsg();
+                        Dashboard.alert('Dual subtitle generation started.');
+                    });
+                }).catch(function () {
+                    Dashboard.hideLoadingMsg();
+                    Dashboard.alert('Could not start the task. Check the server log.');
+                });
+            });
+
+            document.querySelector('#DualSubsConfigPage').addEventListener('pageshow', function () {
+                Dashboard.showLoadingMsg();
+                loadConfig().then(function () {
+                    return loadLibraries();
+                }).then(function () {
+                    Dashboard.hideLoadingMsg();
+                }).catch(function () {
+                    Dashboard.hideLoadingMsg();
+                });
+            });
+
+            document.querySelector('#DualSubsConfigForm').addEventListener('submit', saveConfig);
+        })();
+    </script>
+</div>
+</body>
+</html>
