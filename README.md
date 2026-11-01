@@ -54,15 +54,20 @@ constant is part of the style hash, so changing the ASS pipeline invalidates old
 
 ## Installation
 
-### From a plugin repository
+### From the plugin repository
 
-1. Build or download `dual-subs_<version>.zip`.
-2. Publish it with a `manifest.json` (see `manifest.json` in this repository).
-3. In Jellyfin go to **Dashboard → Plugins → Repositories**, add the manifest URL, then
-   install **Dual Subs** from the catalogue.
+In Jellyfin go to **Dashboard → Plugins → Repositories**, click **+** and add:
 
-The release workflow in `.github/workflows/publish.yaml` builds the zip and manifest with
-`jprm` and attaches them to the GitHub release.
+```
+https://github.com/undaniel/jellyfin-plugin-dualsubs/releases/latest/download/manifest.json
+```
+
+Then open the **Catalog** tab and install **Dual Subs**.
+
+That URL always points at the manifest of the newest release, so Jellyfin shows updates
+automatically. `manifest.json` in this repository is the source for it; the release
+workflow (`.github/workflows/publish.yaml`) rebuilds the zip and manifest with `jprm` and
+attaches both to the GitHub release tagged `v<version>`.
 
 ### Manual build
 
@@ -187,9 +192,11 @@ ya existan en el vídeo: el idioma aprendido abajo y el nativo arriba. El result
 `.ass` externo normal, así que funciona en todos los clientes de Jellyfin sin modificarlos.
 
 Requisitos: Jellyfin 12 o superior, subtítulos de texto (los bitmap como PGS o VobSub se
-omiten) y al menos un par configurado. Los pares se configuran en
-**Panel → Plugins → Dual Subs**; también hay una tarea programada «Generate dual
-subtitles» y una API REST para generar, previsualizar y borrar.
+omiten) y al menos un par configurado. Para instalarlo, añade
+`https://github.com/undaniel/jellyfin-plugin-dualsubs/releases/latest/download/manifest.json`
+en **Panel → Plugins → Repositorios** e instala **Dual Subs** desde el catálogo. Los pares
+se configuran en **Panel → Plugins → Dual Subs**; también hay una tarea programada
+«Generate dual subtitles» y una API REST para generar, previsualizar y borrar.
 
 Limitaciones principales: solo se procesa la fuente de vídeo principal; los `.strm` se
 omiten; el título visible del cliente suele ser solo el idioma («English») porque la API
