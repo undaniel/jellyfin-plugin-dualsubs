@@ -8,14 +8,14 @@
         "category": "Subtitles",
         "versions": [
             {
-                "version": "1.0.3.0",
+                "version": "1.0.4.0",
                 "changelog": "Fixes the wrong-language track picked after a generated file was added. Jellyfin caches extracted embedded subtitles by stream index; adding an external file shifts those indexes. The plugin now detects that mismatch, clears the cache for the item and rebuilds the track, so items already broken by 1.0.0/1.0.1 heal on the next run. Generated files are also deleted by path, never by stream index.\n",
                 "targetAbi": "12.0.0.0",
-                "sourceUrl": "https://github.com/undaniel/jellyfin-plugin-dualsubs/releases/download/v1.0.3.0/dual-subs_1.0.3.0.zip",
-                "checksum": "06fe2bcb3b243af64cae1de3efd70986",
-                "timestamp": "2026-11-01T15:55:46Z"
+                "sourceUrl": "https://github.com/undaniel/jellyfin-plugin-dualsubs/releases/download/v1.0.4.0/dual-subs_1.0.4.0.zip",
+                "checksum": "42027435a372f924dc43d225e72f0868",
+                "timestamp": "2026-11-01T16:10:53Z"
             }
         ],
-        "imageUrl": ""
+        "imageUrl": "https://raw.githubusercontent.com/undaniel/jellyfin-plugin-dualsubs/main/images/icon.png"
     }
 ]
