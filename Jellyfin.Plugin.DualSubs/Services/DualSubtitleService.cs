@@ -5,6 +5,7 @@ using Jellyfin.Plugin.DualSubs.Api;
 using Jellyfin.Plugin.DualSubs.Configuration;
 using Jellyfin.Plugin.DualSubs.Core;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Dto;
@@ -26,6 +27,7 @@ public sealed class DualSubtitleService
     private readonly SubtitleTextProvider _textProvider;
     private readonly ILocalizationManager _localizationManager;
     private readonly IProviderManager _providerManager;
+    private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IFileSystem _fileSystem;
     private readonly ILogger<DualSubtitleService> _logger;
 
@@ -36,6 +38,7 @@ public sealed class DualSubtitleService
     /// <param name="textProvider">Text provider.</param>
     /// <param name="localizationManager">Localization manager.</param>
     /// <param name="providerManager">Provider manager.</param>
+    /// <param name="mediaSourceManager">Media source manager.</param>
     /// <param name="fileSystem">File system.</param>
     /// <param name="logger">Logger.</param>
     public DualSubtitleService(
@@ -43,6 +46,7 @@ public sealed class DualSubtitleService
         SubtitleTextProvider textProvider,
         ILocalizationManager localizationManager,
         IProviderManager providerManager,
+        IMediaSourceManager mediaSourceManager,
         IFileSystem fileSystem,
         ILogger<DualSubtitleService> logger)
     {
@@ -50,6 +54,7 @@ public sealed class DualSubtitleService
         _textProvider = textProvider;
         _localizationManager = localizationManager;
         _providerManager = providerManager;
+        _mediaSourceManager = mediaSourceManager;
         _fileSystem = fileSystem;
         _logger = logger;
     }
@@ -174,7 +179,7 @@ public sealed class DualSubtitleService
 
         var config = CurrentConfiguration;
         var style = BuildStyle(config);
-        var source = PrimarySource(video);
+        var source = await PrimarySourceAsync(video, cancellationToken).ConfigureAwait(false);
         if (source is null)
         {
             return new DualSubsPreviewResponse(
@@ -226,7 +231,7 @@ public sealed class DualSubtitleService
             return 0;
         }
 
-        await DeleteFilesAsync(video, files, cancellationToken).ConfigureAwait(false);
+        DeleteFiles(video, files, cancellationToken);
         return files.Count;
     }
 
@@ -237,7 +242,7 @@ public sealed class DualSubtitleService
         LanguagePair pair,
         CancellationToken cancellationToken)
     {
-        var source = PrimarySource(video);
+        var source = await PrimarySourceAsync(video, cancellationToken).ConfigureAwait(false);
         if (source is null || string.IsNullOrEmpty(source.Id))
         {
             return new DualSubsPairResult(pair.Key, DualSubsStatus.Error, null, null, 0, "No media source found.");
@@ -298,7 +303,7 @@ public sealed class DualSubtitleService
         var replaced = existing.Count > 0;
         if (replaced)
         {
-            await DeleteFilesAsync(video, existing, cancellationToken).ConfigureAwait(false);
+            DeleteFiles(video, existing, cancellationToken);
         }
 
         var ass = AssWriter.Write(selection.PrimaryCues, secondaryCues, style, pair.Key, sourceHash, offset);
@@ -471,64 +476,53 @@ public sealed class DualSubtitleService
         return best is null ? null : fetched.First(item => ReferenceEquals(item.Stream, best));
     }
 
-    private async Task DeleteFilesAsync(
+    private void DeleteFiles(
         Video video,
         IReadOnlyList<PluginSubtitleFile> files,
         CancellationToken cancellationToken)
     {
-        var indexes = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var stream in video.GetMediaStreams().Where(stream => stream.Type == MediaStreamType.Subtitle && stream.IsExternal))
-        {
-            if (!string.IsNullOrWhiteSpace(stream.Path))
-            {
-                indexes[Path.GetFullPath(stream.Path)] = stream.Index;
-            }
-        }
-
-        var needsRefresh = false;
-        foreach (var file in files
-                     .OrderByDescending(file => indexes.GetValueOrDefault(Path.GetFullPath(file.Path), -1)))
+        // Files are deleted by path, not through ISubtitleManager.DeleteSubtitles: stream
+        // indexes shift after an external subtitle is added and Jellyfin resolves them
+        // against a different table, so an index-based delete can remove a user's track.
+        var deleted = false;
+        foreach (var file in files)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var path = Path.GetFullPath(file.Path);
-
-            if (indexes.TryGetValue(path, out var index))
-            {
-                try
-                {
-                    await _subtitleManager.DeleteSubtitles(video, index).ConfigureAwait(false);
-                    continue;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not delete subtitle stream {Index} of item {ItemId} through Jellyfin.", index, video.Id);
-                }
-            }
 
             try
             {
-                File.Delete(path);
-                needsRefresh = true;
+                File.Delete(file.Path);
+                deleted = true;
             }
             catch (IOException ex)
             {
-                _logger.LogWarning(ex, "Could not delete dual subtitle file {Path}.", path);
+                _logger.LogWarning(ex, "Could not delete dual subtitle file {Path}.", file.Path);
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning(ex, "Permission denied deleting dual subtitle file {Path}.", path);
+                _logger.LogWarning(ex, "Permission denied deleting dual subtitle file {Path}.", file.Path);
             }
         }
 
-        if (needsRefresh)
+        if (deleted)
         {
-            await video.RefreshMetadata(cancellationToken).ConfigureAwait(false);
+            _providerManager.QueueRefresh(
+                video.Id,
+                new MetadataRefreshOptions(new DirectoryService(_fileSystem)),
+                RefreshPriority.High);
         }
     }
 
-    private static MediaSourceInfo? PrimarySource(Video video)
+    private async Task<MediaSourceInfo?> PrimarySourceAsync(Video video, CancellationToken cancellationToken)
     {
-        return video.GetMediaSources(false).FirstOrDefault();
+        // The subtitle encoder resolves the stream index against this same table. Reading
+        // the item directly can be one index behind right after an external subtitle is
+        // added, which silently picks the wrong language.
+        var sources = await _mediaSourceManager
+            .GetPlaybackMediaSources(video, null, true, false, cancellationToken)
+            .ConfigureAwait(false);
+
+        return sources.FirstOrDefault();
     }
 
     private static bool IsStrm(Video video)

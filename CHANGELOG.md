@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## 1.0.1.0 - 2026-11-01
+
+- Fix: after a generated file was added, the next run could pick the wrong source tracks
+  (for example Danish and French instead of English and Spanish) because stream indexes
+  were resolved against a stale media source table. Selection now uses
+  `IMediaSourceManager.GetPlaybackMediaSources`, the same table the subtitle encoder uses.
+- Fix: generated files are deleted by path instead of `ISubtitleManager.DeleteSubtitles`,
+  which resolved the index against that same shifted table and could delete a user's
+  subtitle track.
+
 ## 1.0.0.0 - 2026-11-01
 
 - Initial release for Jellyfin 12.x / .NET 10.

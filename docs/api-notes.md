@@ -118,6 +118,21 @@ canonicalSecondaryCues + configHash)`. A canonical cue is
 format the same cue differently between runs, which broke idempotency in integration
 testing. `configHash` includes a render version plus the style and alignment settings.
 
+## Track selection must match the encoder's media source table
+
+`ISubtitleEncoder.GetSubtitles` resolves `subtitleStreamIndex` against
+`IMediaSourceManager.GetPlaybackMediaSources(item, null, true, false, ct)`, **not** against
+`item.GetMediaSources(false)`. Right after an external subtitle is added (including one
+written by this plugin), those two tables can differ by one index: the item already lists
+the new stream while the playback list still does not. Choosing a stream index from the
+item and handing it to the encoder then silently extracts a different language.
+
+The service therefore picks tracks from `GetPlaybackMediaSources` as well.
+
+For the same reason, generated files are deleted by path. `ISubtitleManager.DeleteSubtitles`
+takes an index and resolves it internally against that shifted table, so it can remove an
+unrelated subtitle file.
+
 ## Admin policy
 
 `MediaBrowser.Common.Api.Policies.RequiresElevation` is the policy used by the native

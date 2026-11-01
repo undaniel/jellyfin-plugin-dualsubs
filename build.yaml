@@ -1,7 +1,7 @@
 ---
 name: "Dual Subs"
 guid: "b7f0a4c2-6d3e-4a91-9c58-2e7d1f0a3b64"
-version: "1.0.0.0"
+version: "1.0.1.0"
 targetAbi: "12.0.0.0"
 framework: "net10.0"
 overview: "Dual-language subtitles generated on the server for language learning"
@@ -15,5 +15,6 @@ imageUrl: ""
 artifacts:
 - "Jellyfin.Plugin.DualSubs.dll"
 changelog: >
-  Initial release: language pairs, TopBottom and StackedBottom layouts, automatic offset
-  alignment, manual API, scheduled task, debounced library events and configuration page.
+  Fixes picking the wrong source track right after a subtitle file is added: tracks are
+  now resolved against the same media source table the subtitle encoder uses. Generated
+  files are also deleted by path, never by stream index.
