@@ -66,7 +66,7 @@ public sealed class DualSubsController : ControllerBase
     [Authorize(Policy = Policies.RequiresElevation)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<DualSubsDeleteResponse>> Delete(
+    public ActionResult<DualSubsDeleteResponse> Delete(
         [FromRoute] Guid itemId,
         CancellationToken cancellationToken)
     {
@@ -76,7 +76,7 @@ public sealed class DualSubsController : ControllerBase
             return NotFound();
         }
 
-        var deleted = await _service.DeleteAllGeneratedAsync(video, cancellationToken).ConfigureAwait(false);
+        var deleted = _service.DeleteAllGenerated(video, cancellationToken);
         return Ok(new DualSubsDeleteResponse(video.Id, deleted));
     }
 

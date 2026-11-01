@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here.
 
+## 1.0.2.0 - 2026-11-01
+
+- Fix: after the first generated file was added, later runs could extract a different
+  language (for example Danish instead of English) and write it into the dual track.
+  Jellyfin caches extracted embedded subtitles by stream index in
+  `PathManager.GetSubtitleFolderPath`; a new external subtitle shifts those indexes but the
+  cache files keep their old names. The plugin now clears that cache for the item whenever
+  it adds or removes a file.
+- Fix: generated files are deleted by path instead of `ISubtitleManager.DeleteSubtitles`,
+  which resolves the index against the same shifted table and could delete a user's track.
+- Note: an item processed by 1.0.1.0 may need two runs to converge, because the first run
+  still reads the stale cache and only then clears it.
+
 ## 1.0.1.0 - 2026-11-01
 
 - Fix: after a generated file was added, the next run could pick the wrong source tracks

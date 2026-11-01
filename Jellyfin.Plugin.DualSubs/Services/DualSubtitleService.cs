@@ -5,7 +5,7 @@ using Jellyfin.Plugin.DualSubs.Api;
 using Jellyfin.Plugin.DualSubs.Configuration;
 using Jellyfin.Plugin.DualSubs.Core;
 using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.IO;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Dto;
@@ -27,7 +27,7 @@ public sealed class DualSubtitleService
     private readonly SubtitleTextProvider _textProvider;
     private readonly ILocalizationManager _localizationManager;
     private readonly IProviderManager _providerManager;
-    private readonly IMediaSourceManager _mediaSourceManager;
+    private readonly IPathManager _pathManager;
     private readonly IFileSystem _fileSystem;
     private readonly ILogger<DualSubtitleService> _logger;
 
@@ -38,7 +38,7 @@ public sealed class DualSubtitleService
     /// <param name="textProvider">Text provider.</param>
     /// <param name="localizationManager">Localization manager.</param>
     /// <param name="providerManager">Provider manager.</param>
-    /// <param name="mediaSourceManager">Media source manager.</param>
+    /// <param name="pathManager">Path manager.</param>
     /// <param name="fileSystem">File system.</param>
     /// <param name="logger">Logger.</param>
     public DualSubtitleService(
@@ -46,7 +46,7 @@ public sealed class DualSubtitleService
         SubtitleTextProvider textProvider,
         ILocalizationManager localizationManager,
         IProviderManager providerManager,
-        IMediaSourceManager mediaSourceManager,
+        IPathManager pathManager,
         IFileSystem fileSystem,
         ILogger<DualSubtitleService> logger)
     {
@@ -54,7 +54,7 @@ public sealed class DualSubtitleService
         _textProvider = textProvider;
         _localizationManager = localizationManager;
         _providerManager = providerManager;
-        _mediaSourceManager = mediaSourceManager;
+        _pathManager = pathManager;
         _fileSystem = fileSystem;
         _logger = logger;
     }
@@ -179,7 +179,7 @@ public sealed class DualSubtitleService
 
         var config = CurrentConfiguration;
         var style = BuildStyle(config);
-        var source = await PrimarySourceAsync(video, cancellationToken).ConfigureAwait(false);
+        var source = PrimarySource(video);
         if (source is null)
         {
             return new DualSubsPreviewResponse(
@@ -221,7 +221,7 @@ public sealed class DualSubtitleService
     /// <param name="video">Video item.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Number of deleted files.</returns>
-    public async Task<int> DeleteAllGeneratedAsync(Video video, CancellationToken cancellationToken)
+    public int DeleteAllGenerated(Video video, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(video);
 
@@ -231,7 +231,7 @@ public sealed class DualSubtitleService
             return 0;
         }
 
-        DeleteFiles(video, files, cancellationToken);
+        DeleteFiles(video, PrimarySource(video)?.Id, files, cancellationToken);
         return files.Count;
     }
 
@@ -242,7 +242,7 @@ public sealed class DualSubtitleService
         LanguagePair pair,
         CancellationToken cancellationToken)
     {
-        var source = await PrimarySourceAsync(video, cancellationToken).ConfigureAwait(false);
+        var source = PrimarySource(video);
         if (source is null || string.IsNullOrEmpty(source.Id))
         {
             return new DualSubsPairResult(pair.Key, DualSubsStatus.Error, null, null, 0, "No media source found.");
@@ -303,7 +303,7 @@ public sealed class DualSubtitleService
         var replaced = existing.Count > 0;
         if (replaced)
         {
-            DeleteFiles(video, existing, cancellationToken);
+            DeleteFiles(video, source.Id, existing, cancellationToken);
         }
 
         var ass = AssWriter.Write(selection.PrimaryCues, secondaryCues, style, pair.Key, sourceHash, offset);
@@ -345,6 +345,8 @@ public sealed class DualSubtitleService
                 offset,
                 "Cannot write the subtitle file. Check disk space, folder permissions or 'Save subtitles with media'.");
         }
+
+        ClearSubtitleCache(source.Id);
 
         _providerManager.QueueRefresh(
             video.Id,
@@ -478,6 +480,7 @@ public sealed class DualSubtitleService
 
     private void DeleteFiles(
         Video video,
+        string? mediaSourceId,
         IReadOnlyList<PluginSubtitleFile> files,
         CancellationToken cancellationToken)
     {
@@ -506,6 +509,7 @@ public sealed class DualSubtitleService
 
         if (deleted)
         {
+            ClearSubtitleCache(mediaSourceId);
             _providerManager.QueueRefresh(
                 video.Id,
                 new MetadataRefreshOptions(new DirectoryService(_fileSystem)),
@@ -513,16 +517,39 @@ public sealed class DualSubtitleService
         }
     }
 
-    private async Task<MediaSourceInfo?> PrimarySourceAsync(Video video, CancellationToken cancellationToken)
+    private void ClearSubtitleCache(string? mediaSourceId)
     {
-        // The subtitle encoder resolves the stream index against this same table. Reading
-        // the item directly can be one index behind right after an external subtitle is
-        // added, which silently picks the wrong language.
-        var sources = await _mediaSourceManager
-            .GetPlaybackMediaSources(video, null, true, false, cancellationToken)
-            .ConfigureAwait(false);
+        if (string.IsNullOrEmpty(mediaSourceId))
+        {
+            return;
+        }
 
-        return sources.FirstOrDefault();
+        var folder = _pathManager.GetSubtitleFolderPath(mediaSourceId);
+        if (folder is null || !Directory.Exists(folder))
+        {
+            return;
+        }
+
+        try
+        {
+            // Jellyfin caches extracted embedded subtitles under their stream index. Adding
+            // or removing an external track shifts those indexes, so the cache would hand
+            // back the wrong language. It is regenerated on demand.
+            Directory.Delete(folder, recursive: true);
+        }
+        catch (IOException ex)
+        {
+            _logger.LogWarning(ex, "Could not clear the subtitle cache for media source {MediaSourceId}.", mediaSourceId);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Permission denied clearing the subtitle cache for media source {MediaSourceId}.", mediaSourceId);
+        }
+    }
+
+    private static MediaSourceInfo? PrimarySource(Video video)
+    {
+        return video.GetMediaSources(false).FirstOrDefault();
     }
 
     private static bool IsStrm(Video video)
