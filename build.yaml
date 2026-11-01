@@ -1,7 +1,7 @@
 ---
 name: "Dual Subs"
 guid: "b7f0a4c2-6d3e-4a91-9c58-2e7d1f0a3b64"
-version: "1.0.2.0"
+version: "1.0.3.0"
 targetAbi: "12.0.0.0"
 framework: "net10.0"
 overview: "Dual-language subtitles generated on the server for language learning"
@@ -17,5 +17,6 @@ artifacts:
 changelog: >
   Fixes the wrong-language track picked after a generated file was added. Jellyfin caches
   extracted embedded subtitles by stream index; adding an external file shifts those
-  indexes, so the plugin now clears that cache for the item when it adds or removes a file.
-  Generated files are also deleted by path, never by stream index.
+  indexes. The plugin now detects that mismatch, clears the cache for the item and rebuilds
+  the track, so items already broken by 1.0.0/1.0.1 heal on the next run. Generated files
+  are also deleted by path, never by stream index.

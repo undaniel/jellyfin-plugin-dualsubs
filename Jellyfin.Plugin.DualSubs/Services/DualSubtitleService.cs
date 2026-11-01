@@ -376,6 +376,7 @@ public sealed class DualSubtitleService
         CancellationToken cancellationToken)
     {
         var streams = source.MediaStreams ?? [];
+        EnsureSubtitleCacheMatchesSource(source);
         var isPluginFile = new Func<MediaStream, bool>(stream =>
         {
             if (!stream.IsExternal || stream.IsExternalUrl == true || string.IsNullOrWhiteSpace(stream.Path))
@@ -514,6 +515,47 @@ public sealed class DualSubtitleService
                 video.Id,
                 new MetadataRefreshOptions(new DirectoryService(_fileSystem)),
                 RefreshPriority.High);
+        }
+    }
+
+    private void EnsureSubtitleCacheMatchesSource(MediaSourceInfo source)
+    {
+        if (string.IsNullOrEmpty(source.Id))
+        {
+            return;
+        }
+
+        var folder = _pathManager.GetSubtitleFolderPath(source.Id);
+        if (folder is null || !Directory.Exists(folder))
+        {
+            return;
+        }
+
+        try
+        {
+            var currentIndexes = source.MediaStreams
+                .Where(stream => stream.Type == MediaStreamType.Subtitle && stream.IsTextSubtitleStream)
+                .Select(stream => stream.Index)
+                .ToHashSet();
+
+            // Cached files are named after the stream index. If the cache holds an index
+            // that is no longer a subtitle, the table shifted and every entry is suspect.
+            var stale = Directory.EnumerateFiles(folder)
+                .Select(Path.GetFileNameWithoutExtension)
+                .Any(name => int.TryParse(name, out var index) && !currentIndexes.Contains(index));
+
+            if (stale)
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+        catch (IOException ex)
+        {
+            _logger.LogWarning(ex, "Could not check the subtitle cache for media source {MediaSourceId}.", source.Id);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Permission denied checking the subtitle cache for media source {MediaSourceId}.", source.Id);
         }
     }
 

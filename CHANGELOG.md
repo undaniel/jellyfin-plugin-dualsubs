@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## 1.0.3.0 - 2026-11-01
+
+- Fix: an item already affected by the stale subtitle cache from 1.0.0/1.0.1 now heals.
+  Before extracting, the plugin compares the indexes present in Jellyfin's subtitle cache
+  with the current text-subtitle indexes; if the cache holds an index that is no longer a
+  subtitle, the table shifted and the cache is discarded. No extra ffmpeg work on healthy
+  items.
+- Generated files are still cleared immediately after being added or removed.
+
 ## 1.0.2.0 - 2026-11-01
 
 - Fix: after the first generated file was added, later runs could extract a different
