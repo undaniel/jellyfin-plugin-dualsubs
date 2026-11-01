@@ -19,8 +19,9 @@
 
                 <h3>Language pairs</h3>
                 <p class="fieldDescription">
-                    Use ISO 639-1 or 639-2 codes, for example <code>eng</code> and <code>spa</code>.
-                    Both languages must be different.
+                    Pick the language you are learning (shown at the bottom) and your native
+                    language (shown above it). Removing a pair deletes its generated tracks
+                    from every item on the next run.
                 </p>
                 <table style="width:100%; border-collapse:collapse;">
                     <thead>
@@ -140,26 +141,125 @@
             var pluginId = 'b7f0a4c2-6d3e-4a91-9c58-2e7d1f0a3b64';
             var config = null;
             var librariesLoaded = false;
+            var languages = [];
 
             function byId(id) {
                 return document.querySelector('#' + id);
             }
 
+            function loadLanguages() {
+                return ApiClient.getJSON(ApiClient.getUrl('Localization/Cultures')).then(function (loaded) {
+                    languages = (loaded || []).map(function (culture) {
+                        return {
+                            code: (culture.ThreeLetterISOLanguageName || '').toLowerCase(),
+                            short: (culture.TwoLetterISOLanguageName || '').toLowerCase(),
+                            label: culture.DisplayName + ' (' + (culture.ThreeLetterISOLanguageName || '').toLowerCase() + ')'
+                        };
+                    }).filter(function (language) {
+                        return language.code;
+                    }).sort(function (a, b) {
+                        return a.label.localeCompare(b.label);
+                    });
+                }).catch(function () {
+                    languages = [];
+                    Dashboard.alert('Could not load the language list. Reload the page to try again.');
+                });
+            }
+
+            function findLanguage(code) {
+                var wanted = (code || '').toLowerCase();
+                if (!wanted) {
+                    return null;
+                }
+
+                var match = languages.filter(function (language) {
+                    return language.code === wanted;
+                })[0];
+
+                if (!match) {
+                    match = languages.filter(function (language) {
+                        return language.short === wanted;
+                    })[0];
+                }
+
+                return match || null;
+            }
+
+            // Without the language list, fall back to a text field so the page stays usable.
+            function createLanguageControl(code) {
+                if (!languages.length) {
+                    var input = document.createElement('input', { is: 'emby-input' });
+                    input.type = 'text';
+                    input.maxLength = 8;
+                    input.value = code || '';
+                    return input;
+                }
+
+                var select = document.createElement('select', { is: 'emby-select' });
+                select.className = 'emby-select';
+
+                var match = findLanguage(code);
+                var selected = match ? match.code : (code || '').toLowerCase();
+
+                if (!match && selected) {
+                    select.appendChild(new Option(selected + ' (custom)', selected, true, true));
+                }
+
+                languages.forEach(function (language) {
+                    select.appendChild(new Option(language.label, language.code));
+                });
+
+                if (selected) {
+                    select.value = selected;
+                }
+
+                if (!select.value && select.options.length) {
+                    select.selectedIndex = 0;
+                }
+
+                return select;
+            }
+
             function addPairRow(pair) {
                 var row = document.createElement('tr');
-                row.innerHTML =
-                    '<td style="padding:.25em;"><input class="pair-primary" type="text" is="emby-input" maxlength="8" /></td>' +
-                    '<td style="padding:.25em;"><input class="pair-secondary" type="text" is="emby-input" maxlength="8" /></td>' +
-                    '<td style="padding:.25em; text-align:center;"><input class="pair-enabled" type="checkbox" is="emby-checkbox" /></td>' +
-                    '<td style="padding:.25em;"><button is="emby-button" type="button" class="raised pair-remove"><span>Remove</span></button></td>';
 
-                row.querySelector('.pair-primary').value = pair.PrimaryLanguage || 'eng';
-                row.querySelector('.pair-secondary').value = pair.SecondaryLanguage || 'spa';
-                row.querySelector('.pair-enabled').checked = pair.Enabled !== false;
-                row.querySelector('.pair-remove').addEventListener('click', function () {
+                var primaryCell = document.createElement('td');
+                primaryCell.style.padding = '.25em';
+                var primary = createLanguageControl(pair.PrimaryLanguage || 'eng');
+                primary.classList.add('pair-primary');
+                primaryCell.appendChild(primary);
+
+                var secondaryCell = document.createElement('td');
+                secondaryCell.style.padding = '.25em';
+                var secondary = createLanguageControl(pair.SecondaryLanguage || 'spa');
+                secondary.classList.add('pair-secondary');
+                secondaryCell.appendChild(secondary);
+
+                var enabledCell = document.createElement('td');
+                enabledCell.style.padding = '.25em';
+                enabledCell.style.textAlign = 'center';
+                var enabled = document.createElement('input', { is: 'emby-checkbox' });
+                enabled.type = 'checkbox';
+                enabled.className = 'pair-enabled';
+                enabled.checked = pair.Enabled !== false;
+                enabledCell.appendChild(enabled);
+
+                var removeCell = document.createElement('td');
+                removeCell.style.padding = '.25em';
+                var remove = document.createElement('button', { is: 'emby-button' });
+                remove.type = 'button';
+                remove.className = 'raised pair-remove';
+                remove.appendChild(document.createElement('span')).textContent = 'Remove';
+                removeCell.appendChild(remove);
+
+                remove.addEventListener('click', function () {
                     row.remove();
                 });
 
+                row.appendChild(primaryCell);
+                row.appendChild(secondaryCell);
+                row.appendChild(enabledCell);
+                row.appendChild(removeCell);
                 byId('Pairs').appendChild(row);
             }
 
@@ -228,7 +328,6 @@
                     byId('OverwritePluginFiles').checked = config.OverwritePluginFiles !== false;
                     byId('DebounceSeconds').value = config.DebounceSeconds || 60;
                     byId('MaxConcurrency').value = config.MaxConcurrency || 1;
-                    renderPairs();
                     updatePreview();
                 });
             }
@@ -353,6 +452,9 @@
             document.querySelector('#DualSubsConfigPage').addEventListener('pageshow', function () {
                 Dashboard.showLoadingMsg();
                 loadConfig().then(function () {
+                    return loadLanguages();
+                }).then(function () {
+                    renderPairs();
                     return loadLibraries();
                 }).then(function () {
                     Dashboard.hideLoadingMsg();

@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## 1.0.5.0 - 2026-11-01
+
+- Language pairs are now chosen from a list of Jellyfin's languages (`Spanish (spa)`),
+  instead of typing ISO codes by hand. Stored two-letter codes are mapped on load and a
+  code that is not in the list is kept as a custom option.
+- Removing a pair now deletes its generated tracks from every item on the next run, so
+  changing the language does not leave the previous dual track behind.
+- The configuration page falls back to text fields if the language list cannot be loaded.
+
 ## 1.0.4.0 - 2026-11-01
 
 - Add a plugin icon (`images/icon.png`), published through `imageUrl` in the manifest, so

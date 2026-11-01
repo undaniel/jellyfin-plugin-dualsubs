@@ -90,6 +90,8 @@ public sealed class DualSubtitleService
                 .ToList());
         }
 
+        RemoveFilesForRemovedPairs(video, config, cancellationToken);
+
         foreach (var pair in (config.Pairs ?? []).Where(pair => pair.Enabled))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -477,6 +479,39 @@ public sealed class DualSubtitleService
             fetched.Select(item => (item.Stream, item.Cues.Count)).ToList());
 
         return best is null ? null : fetched.First(item => ReferenceEquals(item.Stream, best));
+    }
+
+    private void RemoveFilesForRemovedPairs(
+        Video video,
+        PluginConfiguration config,
+        CancellationToken cancellationToken)
+    {
+        var configuredKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pair in config.Pairs ?? [])
+        {
+            var normalized = NormalizePair(pair.PrimaryLanguage, pair.SecondaryLanguage);
+            if (normalized is not null)
+            {
+                configuredKeys.Add(normalized.Key);
+            }
+        }
+
+        var orphaned = PluginFileDetector
+            .FindForVideo(video)
+            .Where(file => !configuredKeys.Contains(file.Pair))
+            .ToList();
+
+        if (orphaned.Count == 0)
+        {
+            return;
+        }
+
+        _logger.LogInformation(
+            "Removing {Count} dual subtitle files whose language pair is no longer configured from item {ItemId}.",
+            orphaned.Count,
+            video.Id);
+
+        DeleteFiles(video, PrimarySource(video)?.Id, orphaned, cancellationToken);
     }
 
     private void DeleteFiles(

@@ -91,8 +91,9 @@ under the Jellyfin plugins directory and restart the server.
 
 Open **Dashboard → Plugins → Dual Subs** and configure:
 
-- **Language pairs**: learned language (bottom) and native language (top). Use ISO 639-1
-  (`en`, `es`) or 639-2 (`eng`, `spa`) codes. The two languages must differ.
+- **Language pairs**: learned language (bottom) and native language (top), chosen from a
+  list of Jellyfin's languages. The two must differ. Removing a pair deletes its generated
+  tracks from every item on the next run.
 - **Layout**: `TopBottom` (native above, learned below) or `StackedBottom` (both at the
   bottom, native above the learned text).
 - **Font sizes, colors, outline and italic**.
