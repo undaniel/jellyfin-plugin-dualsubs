@@ -153,7 +153,8 @@ public sealed class DualSubtitleService
                 "STRM items are not supported.");
         }
 
-        var parts = pairQuery.Split('+', 2, StringSplitOptions.TrimEntries);
+        // Query strings decode a literal '+' as a space; accept both forms.
+        var parts = pairQuery.Replace(' ', '+').Split('+', 2, StringSplitOptions.TrimEntries);
         var normalized = parts.Length == 2 ? NormalizePair(parts[0], parts[1]) : null;
         if (normalized is null)
         {
@@ -245,6 +246,13 @@ public sealed class DualSubtitleService
         var selection = await SelectSourcesAsync(video, source, pair, cancellationToken).ConfigureAwait(false);
         if (selection.Status != DualSubsStatus.Ok)
         {
+            _logger.LogDebug(
+                "Dual subtitles skipped for item {ItemId} and pair {Pair}: {Status} {Message}",
+                video.Id,
+                pair.Key,
+                selection.Status,
+                selection.Message);
+
             return new DualSubsPairResult(
                 pair.Key,
                 selection.Status,
