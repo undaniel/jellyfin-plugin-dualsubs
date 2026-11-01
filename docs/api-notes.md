@@ -110,6 +110,14 @@ The filename suffix is parsed for the language, default/forced and hearing-impai
 and any remaining suffix becomes the track title. `UploadSubtitle` only controls the
 language part, so this plugin cannot add a custom title through the native API.
 
+## Source hash
+
+`DualSubs-SourceHash` is `SHA-256(canonicalPrimaryCues + "\n--\n" +
+canonicalSecondaryCues + configHash)`. A canonical cue is
+`start.Ticks|end.Ticks|text`. The raw SRT text is not used because Jellyfin's encoder can
+format the same cue differently between runs, which broke idempotency in integration
+testing. `configHash` includes a render version plus the style and alignment settings.
+
 ## Admin policy
 
 `MediaBrowser.Common.Api.Policies.RequiresElevation` is the policy used by the native

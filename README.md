@@ -47,6 +47,11 @@ Only files with that marker are ever replaced or deleted. If the source text or 
 configuration changes and `OverwritePluginFiles` is enabled, the old plugin file is
 deleted and regenerated. Otherwise generation is a no-op.
 
+`SourceHash` is computed from the parsed cues (start, end and cleaned text), not from the
+raw SRT bytes. Different extractor runs can format SRT differently even when the content
+is identical; hashing canonical cues keeps generation idempotent. A render-version
+constant is part of the style hash, so changing the ASS pipeline invalidates old files.
+
 ## Installation
 
 ### From a plugin repository
