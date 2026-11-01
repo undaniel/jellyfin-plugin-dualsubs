@@ -185,17 +185,25 @@
                 return match || null;
             }
 
+            // Jellyfin's custom elements are registered through the v0 polyfill: the `is`
+            // option of createElement throws there, so the attribute is set instead.
+            function createComponent(tag, is) {
+                var element = document.createElement(tag);
+                element.setAttribute('is', is);
+                return element;
+            }
+
             // Without the language list, fall back to a text field so the page stays usable.
             function createLanguageControl(code) {
                 if (!languages.length) {
-                    var input = document.createElement('input', { is: 'emby-input' });
+                    var input = createComponent('input', 'emby-input');
                     input.type = 'text';
                     input.maxLength = 8;
                     input.value = code || '';
                     return input;
                 }
 
-                var select = document.createElement('select', { is: 'emby-select' });
+                var select = createComponent('select', 'emby-select');
                 select.className = 'emby-select';
 
                 var match = findLanguage(code);
@@ -238,15 +246,20 @@
                 var enabledCell = document.createElement('td');
                 enabledCell.style.padding = '.25em';
                 enabledCell.style.textAlign = 'center';
-                var enabled = document.createElement('input', { is: 'emby-checkbox' });
+                // emby-checkbox needs a label with a span next to it, or it throws on attach.
+                var enabledLabel = document.createElement('label');
+                enabledLabel.className = 'emby-checkbox-label';
+                var enabled = createComponent('input', 'emby-checkbox');
                 enabled.type = 'checkbox';
                 enabled.className = 'pair-enabled';
                 enabled.checked = pair.Enabled !== false;
-                enabledCell.appendChild(enabled);
+                enabledLabel.appendChild(enabled);
+                enabledLabel.appendChild(document.createElement('span'));
+                enabledCell.appendChild(enabledLabel);
 
                 var removeCell = document.createElement('td');
                 removeCell.style.padding = '.25em';
-                var remove = document.createElement('button', { is: 'emby-button' });
+                var remove = createComponent('button', 'emby-button');
                 remove.type = 'button';
                 remove.className = 'raised pair-remove';
                 remove.appendChild(document.createElement('span')).textContent = 'Remove';

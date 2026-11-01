@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## 1.0.6.1 - 2026-11-01
+
+- Fix: the **Add pair** button did nothing and configured pairs were not listed. The page
+  built Jellyfin's custom elements with `document.createElement(tag, { is: ... })`, which
+  throws in Jellyfin's custom element polyfill, so the pair table failed to render and the
+  library list stopped loading too. The `is` attribute is now set on the element instead,
+  and the pair checkbox sits in the `<label>` with the `<span>` that `emby-checkbox`
+  requires.
+
 ## 1.0.6.0 - 2026-11-01
 
 - Fix: the language pair list duplicated itself on every configuration load. The XML
