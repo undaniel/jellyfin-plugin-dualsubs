@@ -29,9 +29,11 @@ public class SubtitlePair
 public class PluginConfiguration : BasePluginConfiguration
 {
     /// <summary>
-    /// Gets or sets configured language pairs.
+    /// Gets or sets configured language pairs. Starts empty: the XML serializer appends
+    /// deserialized items to the list returned by the getter, so a seeded default would be
+    /// duplicated on every configuration load.
     /// </summary>
-    public List<SubtitlePair> Pairs { get; set; } = [new SubtitlePair()];
+    public List<SubtitlePair> Pairs { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the layout: TopBottom or StackedBottom.

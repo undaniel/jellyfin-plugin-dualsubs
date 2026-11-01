@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here.
 
+## 1.0.6.0 - 2026-11-01
+
+- Fix: the language pair list duplicated itself on every configuration load. The XML
+  serializer appends deserialized items to the list returned by the property getter, so the
+  seeded default pair was added on top of the stored ones. The default is now created by the
+  configuration page, not by the model.
+- The configuration page hides duplicate pairs left behind by older builds.
+
 ## 1.0.5.0 - 2026-11-01
 
 - Language pairs are now chosen from a list of Jellyfin's languages (`Spanish (spa)`),

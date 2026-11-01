@@ -263,9 +263,24 @@
                 byId('Pairs').appendChild(row);
             }
 
+            // Older builds could persist the same pair several times.
+            function uniquePairs(pairs) {
+                var seen = {};
+                return (pairs || []).filter(function (pair) {
+                    var key = (pair.PrimaryLanguage || '').toLowerCase() + '|'
+                        + (pair.SecondaryLanguage || '').toLowerCase() + '|'
+                        + (pair.Enabled !== false);
+                    if (seen[key]) {
+                        return false;
+                    }
+                    seen[key] = true;
+                    return true;
+                });
+            }
+
             function renderPairs() {
                 byId('Pairs').textContent = '';
-                (config.Pairs || []).forEach(addPairRow);
+                uniquePairs(config.Pairs).forEach(addPairRow);
                 if (!byId('Pairs').children.length) {
                     addPairRow({ PrimaryLanguage: 'eng', SecondaryLanguage: 'spa', Enabled: true });
                 }
