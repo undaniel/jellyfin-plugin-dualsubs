@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b1f26"/>
+      <stop offset="0.55" stop-color="#101418"/>
+      <stop offset="1" stop-color="#080a0d"/>
+    </linearGradient>
+    <linearGradient id="native" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffcd6b"/>
+      <stop offset="1" stop-color="#dd8511"/>
+    </linearGradient>
+    <linearGradient id="learned" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#9fd8ff"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffcd6b"/>
+      <stop offset="1" stop-color="#9fd8ff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#9fd8ff" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#9fd8ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <circle cx="330" cy="330" r="320" fill="url(#glow)"/>
+
+  <g fill="#ffcd6b" opacity="0.5">
+    <circle cx="120" cy="92" r="3"/>
+    <circle cx="220" cy="52" r="2"/>
+    <circle cx="760" cy="80" r="2.5"/>
+    <circle cx="1180" cy="96" r="2"/>
+    <circle cx="1090" cy="540" r="2.5"/>
+    <circle cx="700" cy="580" r="2"/>
+  </g>
+
+  <!-- Subtitle screen, same character as the icon: native track on top, learned below. -->
+  <g transform="translate(-2.8 -2.8) scale(1.3)">
+    <rect x="86" y="150" width="340" height="212" rx="40" fill="#14181e"
+          stroke="#333b45" stroke-width="6"/>
+    <rect x="122" y="196" width="268" height="48" rx="24" fill="url(#native)"/>
+    <rect x="122" y="272" width="188" height="48" rx="24" fill="url(#learned)"/>
+  </g>
+
+  <rect x="620" y="162" width="88" height="5" rx="2.5" fill="url(#accent)"/>
+  <text x="620" y="268" fill="#FFFFFF" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="86" font-weight="700" letter-spacing="-1">DUAL</text>
+  <text x="620" y="360" fill="#FFCD6B" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="86" font-weight="700" letter-spacing="-1">SUBS</text>
+  <text x="622" y="420" fill="#B9C7DA" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="28" font-weight="400">Two subtitle tracks, one file</text>
+
+  <rect x="620" y="462" width="196" height="46" rx="23" fill="#DD8511" opacity="0.16"
+        stroke="#DD8511" stroke-opacity="0.5"/>
+  <text x="648" y="493" fill="#F6D2A8" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="20" font-weight="600">Jellyfin plugin</text>
+
+  <text x="836" y="493" fill="#8FA2BC" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="20" font-weight="400">Built for language learning</text>
+</svg>

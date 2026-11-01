@@ -1,5 +1,7 @@
 # Dual Subs
 
+![Dual Subs](images/banner.png)
+
 Dual-language subtitle tracks generated on the Jellyfin server.
 
 The plugin combines two existing **text** subtitle tracks from the same video into one
